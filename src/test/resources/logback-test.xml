@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <!-- Completely disable all logging -->
+    <statusListener class="ch.qos.logback.core.status.NopStatusListener" />
+
+    <!-- Turn off EVERYTHING -->
+    <logger name="ROOT" level="OFF" />
+    <logger name="com" level="OFF" />
+    <logger name="org" level="OFF" />
+    <logger name="net" level="OFF" />
+    <logger name="io" level="OFF" />
+    <logger name="ch" level="OFF" />
+    <logger name="javax" level="OFF" />
+    <logger name="java" level="OFF" />
+
+    <!-- Use a null appender -->
+    <appender name="NULL" class="ch.qos.logback.core.helpers.NOPAppender" />
+
+    <root level="OFF">
+        <appender-ref ref="NULL" />
+    </root>
+</configuration>
