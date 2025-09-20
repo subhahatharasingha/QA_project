@@ -48,46 +48,46 @@ jobs:
             sleep 2
           done
 
-      - name: Install Chrome and ChromeDriver for Selenium tests
+      - name: Install Chrome for Selenium tests
+        uses: browser-actions/setup-chrome@v1
+        with:
+          chrome-version: stable
+
+      - name: Setup ChromeDriver
         run: |
-          sudo apt-get update
-          sudo apt-get install -y wget unzip
-          # Install Chrome
-          wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
-          echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" | sudo tee /etc/apt/sources.list.d/google-chrome.list
-          sudo apt-get update
-          sudo apt-get install -y google-chrome-stable
-          # Install ChromeDriver matching Chrome version
+          # Download and setup ChromeDriver
           CHROME_VERSION=$(google-chrome --version | awk '{print $3}')
+          echo "Chrome version: $CHROME_VERSION"
           CHROME_MAJOR_VERSION=$(echo $CHROME_VERSION | cut -d'.' -f1)
-          wget -q "https://chromedriver.storage.googleapis.com/LATEST_RELEASE_${CHROME_MAJOR_VERSION}"
-          CHROMEDRIVER_VERSION=$(cat "LATEST_RELEASE_${CHROME_MAJOR_VERSION}")
-          wget -q "https://chromedriver.storage.googleapis.com/${CHROMEDRIVER_VERSION}/chromedriver_linux64.zip"
+          echo "Chrome major version: $CHROME_MAJOR_VERSION"
+          
+          # Download the correct ChromeDriver version
+          wget -q "https://chromedriver.storage.googleapis.com/LATEST_RELEASE_$CHROME_MAJOR_VERSION" -O chromedriver_version.txt
+          CHROMEDRIVER_VERSION=$(cat chromedriver_version.txt)
+          echo "ChromeDriver version: $CHROMEDRIVER_VERSION"
+          
+          wget -q "https://chromedriver.storage.googleapis.com/$CHROMEDRIVER_VERSION/chromedriver_linux64.zip"
           unzip chromedriver_linux64.zip
           sudo mv chromedriver /usr/local/bin/
+          sudo chmod +x /usr/local/bin/chromedriver
           chromedriver --version
 
-      - name: Run unit tests (excluding Selenium tests)
-        run: mvn test -Dtest="**/*UnitTest,**/*ServiceTest" -Dspring.profiles.active=test -DexcludedGroups=selenium
+      - name: Run unit and service tests (excluding Selenium)
+        run: mvn test -Dtest="**/*UnitTest,**/*ServiceTest,**/*ApiTest" -Dspring.profiles.active=test -DexcludedGroups=selenium
         env:
           SPRING_DATASOURCE_URL: jdbc:mysql://localhost:3306/testdb
           SPRING_DATASOURCE_USERNAME: root
           SPRING_DATASOURCE_PASSWORD: root
           SPRING_JPA_HIBERNATE_DDL_AUTO: create-drop
 
-      - name: Run API tests
-        run: mvn test -Dtest="**/*ApiTest" -Dspring.profiles.active=test -DexcludedGroups=selenium -Dsurefire.failIfNoSpecifiedTests=false
-        env:
-          SPRING_DATASOURCE_URL: jdbc:mysql://localhost:3306/testdb
-          SPRING_DATASOURCE_USERNAME: root
-          SPRING_DATASOURCE_PASSWORD: root
-          SPRING_JPA_HIBERNATE_DDL_AUTO: create-drop
-
-      - name: Run Selenium tests separately with unique user data directories
+      - name: Run Selenium tests with proper setup
         run: |
-          # Run each Selenium test separately with unique user data directory
-          mvn test -Dtest="LoginPageTest" -Dspring.profiles.active=test -Dselenium.user.data.dir=/tmp/chrome-profile-1 -Dsurefire.failIfNoSpecifiedTests=false
-          mvn test -Dtest="RegistrationPageTest" -Dspring.profiles.active=test -Dselenium.user.data.dir=/tmp/chrome-profile-2 -Dsurefire.failIfNoSpecifiedTests=false
+          # Set display for headless Chrome
+          export DISPLAY=:99
+          /usr/bin/Xvfb :99 -screen 0 1920x1080x24 &
+          
+          # Run Selenium tests with proper Chrome options
+          mvn test -Dtest="**/*PageTest" -Dspring.profiles.active=test -Dselenium.headless=true -Dsurefire.failIfNoSpecifiedTests=false
         env:
           SPRING_DATASOURCE_URL: jdbc:mysql://localhost:3306/testdb
           SPRING_DATASOURCE_USERNAME: root
