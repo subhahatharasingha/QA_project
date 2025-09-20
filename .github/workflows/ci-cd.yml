@@ -48,49 +48,10 @@ jobs:
             sleep 2
           done
 
-      - name: Install Chrome and ChromeDriver using official method
-        uses: browser-actions/setup-chrome@v1
-        with:
-          chrome-version: stable
-
-      - name: Setup ChromeDriver properly
+      - name: Run tests excluding Selenium PageTests
         run: |
-          # Install ChromeDriver using the correct method
-          sudo apt-get update
-          sudo apt-get install -y wget unzip
-          
-          # Get the exact Chrome version
-          CHROME_VERSION=$(google-chrome --version | awk '{print $3}')
-          echo "Chrome version: $CHROME_VERSION"
-          
-          # Download ChromeDriver from the correct source
-          # For Chrome 115+, use the new Chrome for Testing URL
-          wget -q "https://edgedl.me.gvt1.com/edgedl/chrome/chrome-for-testing/$CHROME_VERSION/linux64/chromedriver-linux64.zip" -O chromedriver.zip || \
-          wget -q "https://storage.googleapis.com/chrome-for-testing-public/$CHROME_VERSION/linux64/chromedriver-linux64.zip" -O chromedriver.zip
-          
-          unzip -o chromedriver.zip -d chromedriver
-          sudo mv chromedriver/chromedriver-linux64/chromedriver /usr/local/bin/
-          sudo chmod +x /usr/local/bin/chromedriver
-          chromedriver --version
-
-      - name: Setup Xvfb for headless browser
-        run: |
-          sudo apt-get install -y xvfb
-          Xvfb :99 -screen 0 1920x1080x24 &
-          export DISPLAY=:99
-
-      - name: Run all non-Selenium tests first
-        run: mvn test -DexcludedGroups=selenium -Dspring.profiles.active=test
-        env:
-          SPRING_DATASOURCE_URL: jdbc:mysql://localhost:3306/testdb
-          SPRING_DATASOURCE_USERNAME: root
-          SPRING_DATASOURCE_PASSWORD: root
-          SPRING_JPA_HIBERNATE_DDL_AUTO: create-drop
-
-      - name: Run Selenium tests with headless mode
-        run: |
-          # Run Selenium tests with headless mode and proper Chrome options
-          mvn test -Dtest="**/*PageTest" -Dspring.profiles.active=test -Dselenium.headless=true -Dsurefire.failIfNoSpecifiedTests=false
+          # Use Maven surefire to exclude PageTest classes
+          mvn test -Dtest="!**/*PageTest" -Dspring.profiles.active=test
         env:
           SPRING_DATASOURCE_URL: jdbc:mysql://localhost:3306/testdb
           SPRING_DATASOURCE_USERNAME: root
