@@ -48,24 +48,11 @@ jobs:
             sleep 2
           done
 
-      - name: Run unit tests
-        run: mvn test -Dtest=*ServiceTest,*UnitTest -Dspring.profiles.active=test
-        env:
-          SPRING_DATASOURCE_URL: jdbc:mysql://localhost:3306/testdb
-          SPRING_DATASOURCE_USERNAME: root
-          SPRING_DATASOURCE_PASSWORD: root
-          SPRING_JPA_HIBERNATE_DDL_AUTO: create-drop
+      - name: List available test classes (for debugging)
+        run: find . -name "*Test.java" | grep -E "(Service|Unit|Api)" || echo "No specific test files found"
 
-      - name: Run API tests
-        run: mvn test -Dtest=*ApiTest -Dspring.profiles.active=test
-        env:
-          SPRING_DATASOURCE_URL: jdbc:mysql://localhost:3306/testdb
-          SPRING_DATASOURCE_USERNAME: root
-          SPRING_DATASOURCE_PASSWORD: root
-          SPRING_JPA_HIBERNATE_DDL_AUTO: create-drop
-
-      - name: Run BDD tests
-        run: mvn test -Dtest=CucumberTestRunner -Dspring.profiles.active=test
+      - name: Run all tests with test profile
+        run: mvn test -Dspring.profiles.active=test
         env:
           SPRING_DATASOURCE_URL: jdbc:mysql://localhost:3306/testdb
           SPRING_DATASOURCE_USERNAME: root
@@ -91,9 +78,6 @@ jobs:
           name: application-jar
           path: target/*.jar
           retention-days: 7
-
-  # Removed frontend and selenium jobs for simplicity - focus on backend
-  # You can add them back later after backend is working
 
   deploy-demo:
     runs-on: ubuntu-latest
