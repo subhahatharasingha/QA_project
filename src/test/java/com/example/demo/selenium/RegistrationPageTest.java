@@ -10,7 +10,6 @@ import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.web.server.LocalServerPort;
 
 import java.time.Duration;
 
@@ -31,11 +30,19 @@ public class RegistrationPageTest {
         options.addArguments("--no-sandbox");
         options.addArguments("--disable-dev-shm-usage");
         options.addArguments("--window-size=1920,1080");
+        options.addArguments("--headless"); // ADD THIS FOR CI
+        options.addArguments("--remote-allow-origins=*"); // ADD THIS
 
         driver = new ChromeDriver(options);
-        driver.manage().window().maximize();
         driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(10));
         wait = new WebDriverWait(driver, Duration.ofSeconds(20));
+    }
+
+    @AfterEach // ADD THIS METHOD
+    public void tearDown() {
+        if (driver != null) {
+            driver.quit();
+        }
     }
 
     @Test
@@ -65,6 +72,7 @@ public class RegistrationPageTest {
 
         WebElement signupButton = driver.findElement(By.xpath("//button[contains(text(), 'Signup now')]"));
         signupButton.click();
+
         wait.until(ExpectedConditions.urlContains("/logging"));
         assertTrue(driver.getCurrentUrl().contains("/logging"), "Should be redirected to login page after registration");
     }

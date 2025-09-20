@@ -48,10 +48,37 @@ jobs:
             sleep 2
           done
 
-      - name: Run tests excluding Selenium PageTests
+      - name: Setup Chrome and ChromeDriver for Selenium tests
         run: |
-          # Use Maven surefire to exclude PageTest classes
-          mvn test -Dtest="!**/*PageTest" -Dspring.profiles.active=test
+          sudo apt-get update
+          sudo apt-get install -y wget unzip xvfb
+          
+          # Install Chrome
+          wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
+          echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" | sudo tee /etc/apt/sources.list.d/google-chrome.list
+          sudo apt-get update
+          sudo apt-get install -y google-chrome-stable
+          
+          # Setup Xvfb for headless browser
+          Xvfb :99 -screen 0 1920x1080x24 &
+          export DISPLAY=:99
+
+      - name: Run all tests (Unit, API, and Selenium)
+        run: |
+          # Start the Spring Boot application in background
+          mvn spring-boot:run -Dspring-boot.run.profiles=test &
+          SPRING_PID=$!
+          
+          # Wait for application to start
+          echo "Waiting for Spring Boot application to start..."
+          sleep 30
+          
+          # Run all tests
+          echo "Running all tests..."
+          mvn test -Dspring.profiles.active=test
+          
+          # Stop the Spring Boot application
+          kill $SPRING_PID 2>/dev/null || true
         env:
           SPRING_DATASOURCE_URL: jdbc:mysql://localhost:3306/testdb
           SPRING_DATASOURCE_USERNAME: root

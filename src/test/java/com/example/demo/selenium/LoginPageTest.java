@@ -29,12 +29,21 @@ public class LoginPageTest {
         options.addArguments("--no-sandbox");
         options.addArguments("--disable-dev-shm-usage");
         options.addArguments("--window-size=1920,1080");
+        options.addArguments("--headless"); // ADD THIS FOR CI
+        options.addArguments("--remote-allow-origins=*"); // ADD THIS
 
         driver = new ChromeDriver(options);
-        driver.manage().window().maximize();
         driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(10));
         wait = new WebDriverWait(driver, Duration.ofSeconds(20));
     }
+
+    @AfterEach // ADD THIS METHOD
+    public void tearDown() {
+        if (driver != null) {
+            driver.quit();
+        }
+    }
+
     @Test
     public void testFailedLogin() {
         driver.get("http://localhost:5173/logging");
